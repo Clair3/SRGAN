@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import pytorch_ssim
-from data_utils import TrainDatasetFromFolder, TrainDatasetFromFolderWithLR,ValDatasetFromFolderWithLR, ValDatasetFromFolder, display_transform
+from data_utils import TrainDatasetFromFolder, ValDatasetFromFolder, display_transform, TrainDatasetFromFolderWithLR,ValDatasetFromFolderWithLR
 from loss import GeneratorLoss
 from model import Generator, Discriminator
 import RRDBNet_arch as arch 
@@ -25,7 +25,7 @@ parser.add_argument('--crop_size', default=88, type=int, help='training images c
 parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 4, 8],
                     help='super resolution upscale factor')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
-
+parser.add_argument('--name_folder', default='_', type=str, help='name folder for saving')
 
 if __name__ == '__main__':
     opt = parser.parse_args()
@@ -33,23 +33,23 @@ if __name__ == '__main__':
     CROP_SIZE = opt.crop_size
     UPSCALE_FACTOR = opt.upscale_factor
     NUM_EPOCHS = opt.num_epochs
-    NUM_EPOCHS_INIT = 3    
-    path_train = '/content/drive/MyDrive/dataset_souris/TRAIN_DATASET_HR' #'/content/drive/MyDrive/DIV2K/DIV2K_train_HR'
-    path_train_lr = '/content/drive/MyDrive/dataset_souris/TRAIN_DATASET_LR'
+    NAME_FOLDER = opt.name_folder
+    path_train = '/content/drive/MyDrive/dataset_souris_2/TRAIN_DATASET_HR' #'/content/drive/MyDrive/DIV2K/DIV2K_train_HR'
+    path_train_lr = '/content/drive/MyDrive/dataset_souris_2/TRAIN_DATASET_LR'
 
-    path_val = '/content/drive/MyDrive/dataset_souris/VAL_DATASET_HR'  # '/content/drive/MyDrive/DIV2K/DIV2K_valid_HR'
-    path_val_lr = '/content/drive/MyDrive/dataset_souris/VAL_DATASET_LR'
+    path_val = '/content/drive/MyDrive/dataset_souris_2/VAL_DATASET_HR'  # '/content/drive/MyDrive/DIV2K/DIV2K_valid_HR'
+    path_val_lr = '/content/drive/MyDrive/dataset_souris_2/VAL_DATASET_LR'
 
-    #train_set = TrainDatasetFromFolderWithLR(path_train, path_train_lr, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
-    #val_set = ValDatasetFromFolderWithLR(path_val, path_val_lr, upscale_factor=UPSCALE_FACTOR)
-    train_set = TrainDatasetFromFolder(path_train, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
-    val_set = ValDatasetFromFolder(path_val, upscale_factor=UPSCALE_FACTOR)
-    train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=32, shuffle=True)
+    train_set = TrainDatasetFromFolderWithLR(path_train, path_train_lr, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    val_set = ValDatasetFromFolderWithLR(path_val, path_val_lr, upscale_factor=UPSCALE_FACTOR)
+    #train_set = TrainDatasetFromFolder(path_train, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    #val_set = ValDatasetFromFolder(path_val, upscale_factor=UPSCALE_FACTOR)
+    train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=32, shuffle=True)  # DataLoader supports automatically collating individual fetched data samples into batches via arguments batch_size, drop_last, and batch_sampler.
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
     
 
-    #netG = Generator(UPSCALE_FACTOR)
-    netG = arch.RRDBNet(1, 1, 64, 23, gc=32)
+    netG = Generator(UPSCALE_FACTOR)
+    #netG = arch.RRDBNet(1, 1, 64, 23, gc=32)
     print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
     netD = Discriminator()
     print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
@@ -130,29 +130,30 @@ if __name__ == '__main__':
                 running_results['g_adv_loss'] / running_results['batch_sizes'],
                 running_results['d_score'] / running_results['batch_sizes'],
                 running_results['g_score'] / running_results['batch_sizes']))
-        """
-        val_images = []
-        out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
-        if not os.path.exists(out_path):
-            os.makedirs(out_path)
-        val_images.extend( #[display_transform()(sr.data.cpu().squeeze(0))])
-            [display_transform()(data.squeeze(0)), display_transform()(target.squeeze(0)),
-            display_transform()(fake_img.data.cpu().squeeze(0))])  # extend() appends the contents of seq to list.
-            #if epoch % 5 == 0 and epoch != 0:
-        val_images = torch.stack(val_images)  # Concatenates a sequence of tensors along a new dimension
-        val_images = torch.chunk(val_images, val_images.size(0) // 2)  # Splits a tensor into a specific number of chunks. Each chunk is a view of the input tensor.
-        
-        val_save_bar = tqdm(val_images, desc='[saving training results]')
-        index = 1
-        out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
-        for image in val_save_bar:
-            image = utils.make_grid(image, nrow=3, padding=5)
-            utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
-            index += 1"""
-
+            '''
+            val_images = []
+            out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+            val_images.extend( #[display_transform()(sr.data.cpu().squeeze(0))])
+                [display_transform()(data.squeeze(0)), display_transform()(target.squeeze(0)),
+                display_transform()(fake_img.data.cpu().squeeze(0))])  # extend() appends the contents of seq to list.
+                #if epoch % 5 == 0 and epoch != 0:
+            val_images = torch.stack(val_images)  # Concatenates a sequence of tensors along a new dimension
+            val_images = torch.chunk(val_images, val_images.size(0) // 3)  # Splits a tensor into a specific number of chunks. Each chunk is a view of the input tensor.
+            
+            val_save_bar = tqdm(val_images, desc='[saving training results]')
+            
+            out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
+            index = 0
+            for image in val_save_bar:
+                index += 1
+                image = utils.make_grid(image, nrow=3, padding=5)
+                utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
+            '''
         #if epoch % 10 == 0 and epoch != 0:
         netG.eval()
-        out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
+        out_path = 'training_results/' + NAME_FOLDER + '_' + str(UPSCALE_FACTOR) + '/'
         if not os.path.exists(out_path):
             os.makedirs(out_path)
 
@@ -195,8 +196,8 @@ if __name__ == '__main__':
                 index += 1
         if epoch % 5 == 0 and epoch != 0:
             # save model parameters
-            torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
-            torch.save(netD.state_dict(), 'epochs/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+            torch.save(netG.state_dict(), 'epochs/netG_' + NAME_FOLDER + '_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+            torch.save(netD.state_dict(), 'epochs/netD_' + NAME_FOLDER + '_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
         # save loss\scores\psnr\ssim
         results['d_loss'].append(running_results['d_loss'] / running_results['batch_sizes'])
         results['g_loss'].append(running_results['g_loss'] / running_results['batch_sizes'])
@@ -211,4 +212,4 @@ if __name__ == '__main__':
             data={'Loss_D': results['d_loss'], 'Loss_G': results['g_loss'], 'Loss_G_ADV': results['g_adv_loss'], 'Score_D': results['d_score'],
                   'Score_G': results['g_score'], 'PSNR': results['psnr'], 'SSIM': results['ssim']},
             index=range(1, epoch + 1))
-        data_frame.to_csv(out_path + 'srf_' + str(UPSCALE_FACTOR) + '_train_results.csv', index_label='Epoch')
+        data_frame.to_csv(out_path + NAME_FOLDER +'_' + str(UPSCALE_FACTOR) + '_train_results.csv', index_label='Epoch')
