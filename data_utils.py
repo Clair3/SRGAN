@@ -62,7 +62,9 @@ class TrainDatasetFromFolder(Dataset):
         self.lr_transform = train_lr_transform(crop_size, upscale_factor)
 
     def __getitem__(self, index):
-        hr_image = self.hr_transform(Image.open(self.image_filenames[index]))
+        hr_image = Image.open(self.image_filenames[index])
+        hr_image = CenterCrop(176)(hr_image)
+        hr_image = self.hr_transform(hr_image)
         lr_image = self.lr_transform(hr_image)
         return lr_image, hr_image
 

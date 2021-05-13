@@ -1,6 +1,7 @@
 import math
 import torch
 from torch import nn
+from sagan import Self_Attn
 
 
 class Generator(nn.Module):
@@ -41,7 +42,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        self.net = nn.Sequential(
+        self.block1 = nn.Sequential(
             nn.Conv2d(1, 64, kernel_size=3, padding=1),
             nn.LeakyReLU(0.2),
 
@@ -65,23 +66,38 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2),
 
+            #self.block2 = nn.Sequential(
             nn.Conv2d(256, 512, kernel_size=3, padding=1),
             nn.BatchNorm2d(512),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2)
+        )
+        self.attn1 = Self_Attn( 512, 'relu')
 
+        self.block2 = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2),
 
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(512, 1024, kernel_size=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2)
+        )
+
+        self.attn2 = Self_Attn( 1024, 'relu')
+
+        self.block3 = nn.Sequential(
             nn.Conv2d(1024, 1, kernel_size=1)
         )
 
     def forward(self, x):
         batch_size = x.size(0)
-        return torch.sigmoid(self.net(x).view(batch_size))
+
+        x = self.block1(x)
+        x, attn1 = self.attn1(x)
+        x = self.block2(x)
+        x, attn2 = self.attn2(x)
+        x = self.block3(x)
+        return torch.sigmoid(x.view(batch_size)), attn1, attn2
 
 
 class ResidualBlock(nn.Module):

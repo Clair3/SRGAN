@@ -22,8 +22,7 @@ class GeneratorLoss(nn.Module):
         image_loss = self.mse_loss(out_images, target_images)
         # TV Loss
         tv_loss = self.tv_loss(out_images)
-        return image_loss + 0.0001 * adversarial_loss + 2e-8 *tv_loss, adversarial_loss # image_loss + 0.0001 * adversarial_loss + 2e-8 * tv_loss # + 0.006 * perception_loss
-
+        return image_loss + 0.0001 * adversarial_loss + 2e-8 *tv_loss, image_loss, adversarial_loss, tv_loss # image_loss + 0.0001 * adversarial_loss + 2e-8 * tv_loss # + 0.006 * perception_loss
 
 class TVLoss(nn.Module):  # The total variation is the sum of the absolute differences for neighboring pixel-values in the input images. This measures how much noise is in the images.
     def __init__(self, tv_loss_weight=1):
@@ -48,3 +47,4 @@ class TVLoss(nn.Module):  # The total variation is the sum of the absolute diffe
 if __name__ == "__main__":
     g_loss = GeneratorLoss()
     print(g_loss)
+
