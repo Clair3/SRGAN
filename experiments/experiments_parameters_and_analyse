@@ -1,0 +1,47 @@
+Attention : Les PSNR etaient plus autour de 28 - 30 dans les précédentes experiences, avec le crop sur la zone centrale, la valeur diminue nécessairement puisque mon de zones noires sont comparé. 
+
+batch_8_crop_176 :
+PARAMETRES :
+upscale = 4
+génération des images LR par downsampling
+batch_size = 8
+Centercrop des images 500x500 à 176x176. Durant le training, on fait des randomcrop de 88x88, croper l'image initial permet d'assurer pendant la suite des randomcrop contenant une portion d'os et d'éviter un crop de noir sans information.
+ d_loss = 1 - D(Ihr) + D(Isr)
+ g_loss = mse_loss + 0.0001 * adversarial_loss + 2e-8 *tv_loss  avec adv_loss = 1 - D(Isr)
+dataset : dataset_souris_2 : train_HR : 1958, test_HR : 478.
+ANALYSE : 
+divergence rapide des adversarials loss vers 1. Instabilité des loss de G, de SSIM et de PSNR, probablement du à un batch trop petit qui provoque un manque de généralité. La MSE loss est la loss dominante dans la g_loss, apprentissage négligeable par l'adversarial loss.
+
+batch_16_crop_176 :
+PARAMETRES :
+upscale = 4
+génération des images LR par downsampling
+batch_size = 8
+Centercrop des images 500x500 à 176x176.
+ d_loss = 1 - D(Ihr) + D(Isr)
+ g_loss = mse_loss + 0.0001 * adversarial_loss + 2e-8 *tv_loss  
+dataset : dataset_souris_2 : train_HR : 1958, test_HR : 478.
+ANALYSE :
+divergence des 2 adv loss vers 1. D(Ihr) = D(Isr) = 0
+faible SSIM, PSNR
+ La MSE loss = loss dominante dans la g_loss.
+
+
+batch_32_crop_176 :
+PARAMETRES :
+upscale = 4
+génération des images LR par downsampling
+batch_size = 8
+Centercrop des images 500x500 à 176x176.
+ d_loss = 1 - D(Ihr) + D(Isr)
+ g_loss = mse_loss + 0.0001 * adversarial_loss + 2e-8 *tv_loss  
+dataset : dataset_souris_2 : train_HR : 1958, test_HR : 478.
+ANALYSE:
+la g_adv diminue régulièrement, divergence rapide de d_loss vers 1. SSIM et PSNR pas top. 
+D(Ihr) = D(Isr) -> 0.5
+La MSE loss = loss dominante dans la g_loss.
+
+batch_32_crop_176 tentative 2:
+upscale = 4
+paramètres identique à l'experience précédente.
+divergence rapide de d_loss vers 1, et de g_adv_loss vers 0. analyse identique sinon.
