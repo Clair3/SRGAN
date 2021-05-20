@@ -1,0 +1,27 @@
+impl2_souris_4
+upscale 4
+downsampling
+crop dans l'entrainement : 176
+loss G : loss_content + 1e-3 * loss_gan
+nb ResNet : 5
+Discriminator : implémentation 2 (model_impl2.py)
+Generator : implémentation 1 (model.py)
+lr = 0.0002
+b1 = 0.5
+b2 = 0.999
+bonne amélioration des résultats, loss et score pas ouf, influence faible du GAN sur la loss de G
+
+lr=0.00002_4
+
+upscale 4
+downsampling
+crop dans l'entrainement : 176
+loss G : loss_content + 1e-3 * loss_gan
+nb ResNet : 5
+Discriminator : implémentation 2 (model_impl2.py)
+Generator : implémentation 2 (model_impl2.py)
+lr = 0.00002
+b1 = 0.5
+b2 = 0.999
+artefacts dans les résultats, probablement dû à l'implémentation 2, amélioration du comportement des loss
+
