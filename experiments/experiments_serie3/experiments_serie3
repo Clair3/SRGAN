@@ -1,0 +1,58 @@
+experiment : exp
+upscale 4
+downsampling
+crop dans l'entrainement : None
+loss G : loss_content + 1e-2 * loss_gan
+nb ResNet : 16
+Discriminator : implémentation 2 (model_impl2.py)
+Generator : implémentation 1 (model_impl2.py)
+lr = 0.00002
+b1 = 0.5
+b2 = 0.999
+Résultats très convinquants
+
+
+experiment : exp2
+upscale 4
+downsampling
+crop dans l'entrainement : 176
+loss G : loss_content + 1e-2 * loss_gan
+nb ResNet : 16
+Discriminator : implémentation 2 (model_impl2.py)
+Generator : implémentation 1 (model_impl2.py)
+lr = 0.00002
+b1 = 0.5
+b2 = 0.999
+Possible amélioration par rapport à exp. précédente
+
+experiment : exp3
+upscale 4
+downsampling
+crop dans l'entrainement : 176
+loss G : loss_content + 1e-2 * loss_gan
+nb ResNet : 16
+Discriminator : implémentation 2 (model_impl2.py)
+Generator : implémentation 1 (model_impl2.py)
+lr = 0.00002
+b1 = 0.5
+b2 = 0.999
+Changement de methode dans la phase de test :  le PSNR et SSIM sont calculé sur un patch de l'image et non plus sur l'image complete. lr encore trop grand ?
+
+
+experiment : exp4
+entrainement sur l'ensemble de l'image et non plus par patchs. apprentissage non terminé ?
+
+experiments : exp5
+entrainement sur les patchs, validations sur les patchs. Dataset de validation : VAL_DATASET (33 images)
+lr = 0.000002
+
+
+experiments : exp6 :
+entrainement sur l'ensemble de l'image et non plus par patchs. entrainement sur 450 epochs
+lr = 0.000002
+Résultats mauvais
+
+experiments : exp7 :
+entrainement par patchs. entrainement sur 500 epochs.
+lr = 0.000002
+Résultats mauvais
