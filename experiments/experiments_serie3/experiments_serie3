@@ -53,6 +53,6 @@ lr = 0.000002
 Résultats mauvais
 
 experiments : exp7 :
-entrainement par patchs. entrainement sur 500 epochs.
+entrainement par patchs. entrainement sur 250 epochs.
 lr = 0.000002
 Résultats mauvais
