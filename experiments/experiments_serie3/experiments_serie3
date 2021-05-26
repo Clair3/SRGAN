@@ -23,7 +23,7 @@ Generator : implémentation 1 (model_impl2.py)
 lr = 0.00002
 b1 = 0.5
 b2 = 0.999
-Possible amélioration par rapport à exp. précédente
+Possible amélioration par rapport à exp. précédente. Résultats de bonne qualité
 
 experiment : exp3
 upscale 4
@@ -53,6 +53,14 @@ lr = 0.000002
 Résultats mauvais
 
 experiments : exp7 :
-entrainement par patchs. entrainement sur 250 epochs.
-lr = 0.000002
-Résultats mauvais
+entrainement par patchs. entrainement sur 500 epochs
+lr = 0.00002
+Bon résultats
+
+experiments : exp8:
+entrainement sur l'ensemble de l'image
+lr = 0.00002
+résultats mauvais, resize de l'image trop important ?
+
+experiment: exp9
+crop de l'image à 172 puis entrainement sur l'ensemble de l'image (resize à 92)
