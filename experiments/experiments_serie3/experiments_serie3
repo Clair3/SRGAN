@@ -44,7 +44,7 @@ entrainement sur l'ensemble de l'image et non plus par patchs. apprentissage non
 
 experiments : exp5
 entrainement sur les patchs, validations sur les patchs. Dataset de validation : VAL_DATASET (33 images)
-lr = 0.000002
+lr = 0.000002. lr trop bas ?
 
 
 experiments : exp6 :
@@ -63,4 +63,9 @@ lr = 0.00002
 résultats mauvais, resize de l'image trop important ?
 
 experiment: exp9
-crop de l'image à 172 puis entrainement sur l'ensemble de l'image (resize à 92)
+crop de l'image à 172 puis entrainement sur l'ensemble de l'image (resize à 92). 500 epochs
+bon résultats.
+
+experiment: exp10
+avec une couche de squeeze-and-excitation dans la residual couche
+entraiment par patchs. Pas d'amélioration significatif des résultats 
