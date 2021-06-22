@@ -1,6 +1,7 @@
 from os import listdir
 from os.path import join
-
+from math import sqrt
+import numpy as np
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 from torchvision.transforms import Compose, RandomCrop, ToTensor, ToPILImage, CenterCrop, Resize
@@ -16,14 +17,15 @@ def calculate_valid_crop_size(crop_size, upscale_factor):
 
 def train_hr_transform(crop_size):
     return Compose([
-        RandomCrop(crop_size),
+        CenterCrop(crop_size),
+        #RandomCrop(crop_size),
         ToTensor(),  # Convert a PIL Image or numpy.ndarray to tensor.
     ])
 
 
 def train_lr_transform(crop_size, upscale_factor):
     return Compose([
-        ToPILImage(),
+        #ToPILImage(),
         Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC),
         ToTensor()
     ])
@@ -47,11 +49,16 @@ def Randomcrop(imageHR, crop_size):
 def display_transform():
     return Compose([
         ToPILImage(),
-        Resize(400),
-        CenterCrop(400),
+        #Resize(400),
+        #CenterCrop(400),
         ToTensor()
     ])
 
+def display_transform_recons():
+    return Compose([
+        ToPILImage(),
+        ToTensor()
+    ])
 
 class TrainDatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, crop_size, upscale_factor):
@@ -63,7 +70,7 @@ class TrainDatasetFromFolder(Dataset):
 
     def __getitem__(self, index):
         hr_image = Image.open(self.image_filenames[index])
-        hr_image = CenterCrop(176)(hr_image)
+        #hr_image = CenterCrop(176)(hr_image)
         hr_image = self.hr_transform(hr_image)
         lr_image = self.lr_transform(hr_image)
         return lr_image, hr_image
@@ -78,19 +85,23 @@ class TrainDatasetFromFolderWithLR(Dataset):
         self.imageLR_filenames = [join(datasetLR_dir, x) for x in sorted(listdir(datasetLR_dir)) if is_image_file(x)]
         self.crop_size = calculate_valid_crop_size(crop_size, upscale_factor)
         self.upscale_factor = upscale_factor
-        #self.hr_transform = train_hr_transform_with_lr(crop_size)
-        #self.lr_transform = train_lr_transform_with_lr(crop_size, upscale_factor)
+        self.hr_transform = train_hr_transform(crop_size) 
+        self.lr_transform = train_lr_transform(crop_size, upscale_factor)
 
     def __getitem__(self, index):
         imageHR = Image.open(self.imageHR_filenames[index])
         imageLR = Image.open(self.imageLR_filenames[index])
 
-        imageHR = CenterCrop(164)(imageHR)
-        imageLR = CenterCrop(164)(imageLR)
+        imageHR = CenterCrop(496)(imageHR)
+        imageLR = CenterCrop(496)(imageLR)
 
-        crop_windows = Randomcrop(imageHR, self.crop_size)
+        #crop_windows = Randomcrop(imageHR, self.crop_size)
+        #crop_windows = CenterCrop(self.crop_size)
+        
         hr_image = train_hr_transform_with_lr(imageHR,crop_windows)
         lr_image = train_lr_transform_with_lr(imageLR, self.crop_size, self.upscale_factor, crop_windows)
+        #hr_image = self.hr_transform(imageHR)
+        #lr_image = self.lr_transform(imageLR)
         return lr_image, hr_image
 
     def __len__(self):
@@ -101,11 +112,11 @@ class ValDatasetFromFolderWithLR(Dataset):
     def __init__(self, datasetHR_dir, datasetLR_dir, upscale_factor):
         super(ValDatasetFromFolderWithLR, self).__init__()
         self.upscale_factor = upscale_factor
-        self.imageHR_filenames = [join(datasetHR_dir, x) for x in listdir(datasetHR_dir) if is_image_file(x)]  # The join() method takes all items in an iterable and joins them into one string.
-        self.imageLR_filenames = [join(datasetLR_dir, x) for x in listdir(datasetLR_dir) if is_image_file(x)]
+        self.imageHR_filenames = [join(datasetHR_dir, x) for x in sorted(listdir(datasetHR_dir)) if is_image_file(x)]  # The join() method takes all items in an iterable and joins them into one string.
+        self.imageLR_filenames = [join(datasetLR_dir, x) for x in sorted(listdir(datasetLR_dir)) if is_image_file(x)]
 
     def __getitem__(self, index):
-        hr_image = Image.open(self.imageHR_filenames[index])
+        hr_image = Image.open(self.imageHR_filenames[index]) # + add CenterCrop(96(stuff)
         lr_image = Image.open(self.imageLR_filenames[index])
         w, h = hr_image.size
         crop_size = calculate_valid_crop_size(min(w, h), self.upscale_factor)
@@ -118,8 +129,6 @@ class ValDatasetFromFolderWithLR(Dataset):
 
     def __len__(self):
         return len(self.imageHR_filenames)
-
-
 
 
 class ValDatasetFromFolder(Dataset):
@@ -135,6 +144,7 @@ class ValDatasetFromFolder(Dataset):
         lr_scale = Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC)
         hr_scale = Resize(crop_size, interpolation=Image.BICUBIC)
         hr_image = CenterCrop(crop_size)(hr_image)
+    
         lr_image = lr_scale(hr_image)
         hr_restore_img = hr_scale(lr_image)
         return ToTensor()(lr_image), ToTensor()(hr_restore_img), ToTensor()(hr_image)
@@ -184,3 +194,61 @@ class TestDatasetFromFolder(Dataset):
 
     def __len__(self):
         return len(self.lr_filenames)
+
+class ValDatasetReconstruction(Dataset):
+    def __init__(self, datasetHR_dir, datasetLR_dir, upscale_factor):
+        super(ValDatasetReconstruction, self).__init__()
+        self.upscale_factor = upscale_factor
+        self.lst_HR =sorted(listdir(datasetHR_dir))
+        self.imageHR_filenames = [join(datasetHR_dir, x) for x in sorted(listdir(datasetHR_dir)) if is_image_file(x)]  # The join() method takes all items in an iterable and joins them into one string.
+        self.imageLR_filenames = [join(datasetLR_dir, x) for x in sorted(listdir(datasetLR_dir)) if is_image_file(x)]  
+    def __getitem__(self, index):
+        imageHR = Image.open(self.imageHR_filenames[index])
+        imageLR = Image.open(self.imageLR_filenames[index]) # a commenter si downsampling
+        
+        w, h = imageHR.size
+        crop_size = 96
+        #print(crop_size // self.upscale_factor)
+        lr_scale = Resize(crop_size // self.upscale_factor, interpolation=Image.BICUBIC)
+        patch_imageLR = image_in_patch(imageLR, crop_size, lr_scale)
+        #print(h // self.upscale_factor)
+        imageLR = Resize(h // self.upscale_factor, interpolation=Image.BICUBIC)(imageLR)
+        return patch_imageLR, ToTensor()(imageHR), ToTensor()(imageLR), self.lst_HR[index] 
+
+    def __len__(self):
+        return len(self.imageHR_filenames)
+
+def image_in_patch(img, crop_size, resize):
+    patch_image = []
+    height, width = img.size
+    nb_patch = width // crop_size
+    border = (width - nb_patch * crop_size) / 2
+    i, j = (int(border), int(border))
+    h, w = crop_size, crop_size
+    for a in range(nb_patch):
+        i = int(border)
+        for b in range(nb_patch):
+            patch = crop(img, i, j, h, w) 
+            patch_image += [ToTensor()(resize(patch))]
+            i += h
+        j += w
+
+    return patch_image
+
+
+def patch_in_image(patch_image, size, crop_size):
+    new_img = Image.new('L', (size, size))
+    #print(size, crop_size, len(patch_image) * crop_size)
+    border = (size - sqrt(len(patch_image)) * crop_size) / 2
+    i, j = (int(border), int(border))
+    h, w = crop_size, crop_size
+    for patch in patch_image:
+        img = ToPILImage()(patch.squeeze(0).squeeze(0).cpu().detach())
+        new2 = Image.new('L', (crop_size, crop_size), 255)
+        new_img.paste(img, (i, j, i + h, j + w), mask=None)
+        j += w
+        if sqrt(len(patch_image)) // (j / w) == 0:
+            j = int(border)
+            i += h
+    return ToTensor()(new_img).unsqueeze(0)
+
